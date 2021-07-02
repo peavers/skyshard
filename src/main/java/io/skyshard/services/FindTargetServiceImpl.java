@@ -3,16 +3,19 @@ package io.skyshard.services;
 import io.skyshard.domain.Target;
 import io.skyshard.properties.AppProperties;
 import io.skyshard.utils.MatUtils;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Range;
-import org.opencv.core.*;
-import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -30,39 +33,45 @@ public class FindTargetServiceImpl implements FindTargetService {
   }
 
   @Override
-  public Target findSingleTarget(final Mat source) {
+  public Optional<Target> findSingleTarget(final Mat source) {
 
     return processSingleTarget(source);
   }
 
-  public Target processSingleTarget(final Mat source) {
-    final Mat result = matchTemplate(source);
+  /**
+   * Find the first target on the screen. This works better with fast moving targets since you're
+   * just hitting one before looking again to see if anything has moved.
+   */
+  private Optional<Target> processSingleTarget(final Mat source) {
 
-    final Core.MinMaxLocResult minMaxLocResult = Core.minMaxLoc(result);
+    final var result = matchTemplate(source);
+    final var minMaxLocResult = Core.minMaxLoc(result);
+    final var maxLoc = minMaxLocResult.maxLoc;
+    final var point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
 
-    double maxValue = minMaxLocResult.maxVal;
-
-    final Point maxLoc = minMaxLocResult.maxLoc;
-    final Point point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
-
-    if (maxValue >= appProperties.getMatchThreshold()) {
-      return Target.builder().point(point).build();
-    } else {
-      return null;
-    }
+    return minMaxLocResult.maxVal >= appProperties.getMatchThreshold()
+        ? Optional.of(Target.builder().point(point).build())
+        : Optional.empty();
   }
 
-  public List<Target> processMultipleTargets(final Mat source) {
-    final Mat result = matchTemplate(source);
+  /**
+   * Find all the targets on the screen. This is probably faster if you've got a lot of targets on
+   * the screen which don't move. You can attack each one before taking a new screenshot.
+   *
+   * <p>If you want to debug the screenshot and matching, you'll need to use this method for
+   * outputs.
+   */
+  private List<Target> processMultipleTargets(final Mat source) {
 
+    final var result = matchTemplate(source);
     final List<Target> targets = new ArrayList<>();
 
     double maxValue;
     Mat destination;
 
     while (true) {
-      final Core.MinMaxLocResult minMaxLocResult = Core.minMaxLoc(result);
-      final Point maxLoc = minMaxLocResult.maxLoc;
+      final var minMaxLocResult = Core.minMaxLoc(result);
+      final var maxLoc = minMaxLocResult.maxLoc;
 
       maxValue = minMaxLocResult.maxVal;
       destination = source.clone();
@@ -70,7 +79,7 @@ public class FindTargetServiceImpl implements FindTargetService {
       if (maxValue >= appProperties.getMatchThreshold()) {
         final Point point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
 
-        // Update the pointer location
+        // Update the pointer location to the next target
         Imgproc.rectangle(result, maxLoc, point, new Scalar(0, 255, 0), -1);
         drawMatch(source, maxLoc, point);
 
@@ -84,13 +93,16 @@ public class FindTargetServiceImpl implements FindTargetService {
       }
     }
 
-    writeMatchToDisk(destination);
+    if (appProperties.isDebug()) {
+      MatUtils.write(destination, "match");
+    }
 
     return targets;
   }
 
   /** Preform the match between the source and the template file. */
   private Mat matchTemplate(final Mat source) {
+
     final Mat result = new Mat();
 
     final Mat normalizeSource = MatUtils.normalize(source);
@@ -106,6 +118,7 @@ public class FindTargetServiceImpl implements FindTargetService {
 
   /** Draw on the source image the location of the match. */
   private void drawMatch(final Mat source, final Point maxLoc, final Point point) {
+
     if (appProperties.isDebug()) {
       Imgproc.rectangle(source, maxLoc, point, new Scalar(0, 255, 0), 5);
       Imgproc.putText(
@@ -116,13 +129,6 @@ public class FindTargetServiceImpl implements FindTargetService {
           2.0,
           new Scalar(0, 255, 0),
           1);
-    }
-  }
-
-  /** Flush the match file to disk. This is slow. */
-  private void writeMatchToDisk(final Mat destination) {
-    if (appProperties.isDebug()) {
-      Imgcodecs.imwrite(Instant.now().toEpochMilli() + "-match.jpg", destination);
     }
   }
 
