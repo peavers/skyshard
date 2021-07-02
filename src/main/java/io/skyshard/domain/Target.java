@@ -8,16 +8,15 @@ import org.opencv.core.Point;
 @Builder
 public class Target {
 
-    private Point point;
+  private Point point;
 
-    public int x() {
+  public int x() {
 
-        return (int) Math.round(this.point.x);
-    }
+    return (int) Math.round(this.point.x);
+  }
 
-    public int y() {
+  public int y() {
 
-        return (int) Math.round(this.point.y);
-    }
-
+    return (int) Math.round(this.point.y);
+  }
 }

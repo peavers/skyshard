@@ -1,32 +1,44 @@
 package io.skyshard.services;
 
+import static org.bytedeco.javacv.OpenCVFrameConverter.ToOrgOpenCvCoreMat;
+
+import io.skyshard.properties.AppProperties;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.springframework.stereotype.Service;
-
-import static org.bytedeco.javacv.OpenCVFrameConverter.ToOrgOpenCvCoreMat;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScreenshotServiceImpl implements ScreenshotService {
 
-    private final FFmpegFrameGrabber grabber;
+  private final FFmpegFrameGrabber grabber;
 
-    private final ToOrgOpenCvCoreMat toCore = new ToOrgOpenCvCoreMat();
+  private final AppProperties appProperties = new AppProperties();
 
-    @Override
-    @SneakyThrows
-    public Mat take() {
+  private final ToOrgOpenCvCoreMat toCore = new ToOrgOpenCvCoreMat();
 
-        grabber.start();
-        final Mat output = toCore.convert(grabber.grab());
-        grabber.stop();
+  @Override
+  @SneakyThrows
+  public Mat take() {
 
-        return output;
+    if (!grabber.isCloseInputStream()) {
+      grabber.stop();
     }
 
+    grabber.start();
+
+    final Mat screenshot = toCore.convert(grabber.grabImage());
+
+    if (appProperties.isDebug()) {
+      Imgcodecs.imwrite(Instant.now().toEpochMilli() + "-screenshot.jpg", screenshot);
+    }
+
+    return screenshot;
+  }
 }

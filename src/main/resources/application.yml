@@ -3,6 +3,8 @@ spring:
     name: Skyshard
 
 application:
-  template: ""
   debug: false
-
+  single-target-mode: false
+  template: "templates/default-1.png"
+  match-threshold: 0.9
+  duplicate-threshold: 30

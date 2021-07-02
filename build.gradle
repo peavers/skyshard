@@ -1,10 +1,11 @@
 plugins {
     id 'org.springframework.boot' version '2.5.0'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'org.sonarqube' version '3.3'
     id 'java'
 }
 
-group = 'com.example'
+group = 'io.skyshard'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
@@ -21,12 +22,18 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-
     implementation 'org.apache.commons:commons-lang3:3.12.0'
-
     implementation 'org.bytedeco:javacv-platform:1.5.5'
     implementation 'org.bytedeco:opencv-platform:4.5.1-1.5.5'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", group
+        property "sonar.host.url", System.getenv("SONAR_HOST")
+    }
 }

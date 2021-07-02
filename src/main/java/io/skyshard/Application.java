@@ -14,15 +14,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties(AppProperties.class)
 public class Application {
 
-    public static void main(final String[] args) {
+  public static void main(final String[] args) {
 
-        Loader.load(opencv_java.class);
+    Loader.load(opencv_java.class);
 
-        avutil.av_log_set_level(avutil.AV_LOG_QUIET);
+    avutil.av_log_set_level(avutil.AV_LOG_QUIET);
 
-        final SpringApplicationBuilder builder = new SpringApplicationBuilder(Application.class);
-        builder.headless(false);
-        builder.run(args);
-    }
-
+    final SpringApplicationBuilder builder = new SpringApplicationBuilder(Application.class);
+    builder.headless(false);
+    builder.run(args);
+  }
 }
