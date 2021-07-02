@@ -5,7 +5,6 @@ import io.skyshard.services.AttackService;
 import io.skyshard.services.FindTargetService;
 import io.skyshard.services.ScreenshotService;
 import lombok.RequiredArgsConstructor;
-import org.opencv.core.Mat;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,15 +20,15 @@ public class StartUp {
 
   private final AttackService attackService;
 
-  @Scheduled(fixedDelay = 50, initialDelay = 0)
+  @Scheduled(fixedDelay = 250, initialDelay = 0)
   public void process() {
 
-    final Mat source = screenshotService.take();
+    final var screenshot = screenshotService.take();
 
     if (appProperties.isSingleTargetMode()) {
-      attackService.attack(findTargetService.findSingleTarget(source));
+      findTargetService.findSingleTarget(screenshot).ifPresent((attackService::attack));
     } else {
-      attackService.attack(findTargetService.findMultipleTarget(source));
+      findTargetService.findMultipleTarget(screenshot).forEach(attackService::attack);
     }
   }
 }

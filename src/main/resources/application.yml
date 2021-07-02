@@ -3,7 +3,7 @@ spring:
     name: Skyshard
 
 application:
-  debug: false
+  debug: true
   single-target-mode: false
   template: "templates/default-1.png"
   match-threshold: 0.9

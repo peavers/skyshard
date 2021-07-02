@@ -7,16 +7,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RobotConfig {
 
+  /**
+   * Create a singleton robot, the robot is used for moving the mouse pointer as well as keyboard
+   * inputs.
+   */
   @Bean
   public Robot robot() {
 
     try {
-      final Robot robot = new Robot();
+      final var robot = new Robot();
       robot.setAutoWaitForIdle(true);
 
       return robot;
-    } catch (final AWTException e) {
-      throw new RuntimeException(e.getMessage());
+    } catch (final Exception exception) {
+      throw new RuntimeException(exception.getMessage());
     }
   }
 }
