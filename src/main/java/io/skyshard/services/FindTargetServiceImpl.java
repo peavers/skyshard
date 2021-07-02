@@ -1,7 +1,7 @@
 package io.skyshard.services;
 
 import io.skyshard.domain.Target;
-import io.skyshard.properties.AppProperties;
+import io.skyshard.properties.SkyshardProperties;
 import io.skyshard.utils.MatUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FindTargetServiceImpl implements FindTargetService {
 
-    private final AppProperties appProperties;
+    private final SkyshardProperties skyshardProperties;
 
     private final Mat template;
 
@@ -49,7 +49,7 @@ public class FindTargetServiceImpl implements FindTargetService {
         final var maxLoc = minMaxLocResult.maxLoc;
         final var point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
 
-        return minMaxLocResult.maxVal >= appProperties.getMatchThreshold()
+        return minMaxLocResult.maxVal >= skyshardProperties.getMatchThreshold()
                 ? Optional.of(Target.builder().point(point).build())
                 : Optional.empty();
     }
@@ -76,13 +76,13 @@ public class FindTargetServiceImpl implements FindTargetService {
             maxValue = minMaxLocResult.maxVal;
             destination = source.clone();
 
-            if (maxValue >= appProperties.getMatchThreshold()) {
+            if (maxValue >= skyshardProperties.getMatchThreshold()) {
                 final var point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
 
                 // Update the pointer location to the next target
                 Imgproc.rectangle(result, maxLoc, point, new Scalar(0, 255, 0), -1);
 
-                if(appProperties.isDebug()) {
+                if(skyshardProperties.isDebug()) {
                     MatUtils.drawRectangle(source, maxLoc, point);
                 }
 
@@ -96,7 +96,7 @@ public class FindTargetServiceImpl implements FindTargetService {
             }
         }
 
-        if (appProperties.isDebug()) {
+        if (skyshardProperties.isDebug()) {
             MatUtils.write(destination, "match");
         }
 
@@ -125,7 +125,7 @@ public class FindTargetServiceImpl implements FindTargetService {
      */
     private boolean isDuplicate(final List<Target> targets, final Point point) {
 
-        final double threshold = appProperties.getDuplicateThreshold();
+        final double threshold = skyshardProperties.getDuplicateThreshold();
 
         return targets.stream()
                 .anyMatch(

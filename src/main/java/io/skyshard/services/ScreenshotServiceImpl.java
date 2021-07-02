@@ -1,6 +1,6 @@
 package io.skyshard.services;
 
-import io.skyshard.properties.AppProperties;
+import io.skyshard.properties.SkyshardProperties;
 import io.skyshard.utils.MatUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -18,7 +18,7 @@ public class ScreenshotServiceImpl implements ScreenshotService {
 
     private final FFmpegFrameGrabber grabber;
 
-    private final AppProperties appProperties;
+    private final SkyshardProperties skyshardProperties;
 
     private final ToOrgOpenCvCoreMat toCore = new ToOrgOpenCvCoreMat();
 
@@ -34,7 +34,7 @@ public class ScreenshotServiceImpl implements ScreenshotService {
 
         final Mat screenshot = toCore.convert(grabber.grabImage());
 
-        if (appProperties.isDebug()) {
+        if (skyshardProperties.isDebug()) {
             MatUtils.write(screenshot, "screenshot");
         }
 

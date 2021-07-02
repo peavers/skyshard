@@ -1,10 +1,25 @@
-spring:
-  application:
-    name: Skyshard
+skyshard:
+  # If true, each screenshot and the region matched will be written to the .debug directory. Slows the process down
+  # a application down drastically. Not recommended unless you want to see whats happening.
+  debug: false
 
-application:
-  debug: true
-  single-target-mode: false
-  template: "templates/default-1.png"
+  # When a screenshot is taken we have to decide do we want to process all the targets found in that screenshot or just
+  # the first one we find, then take another screenshot. There are pros and cons to each approach. Typically, I've found
+  # using `singleTargetMode` to preform better and yield better results but your mileage may very here.
+  single-target-mode: true
+
+  # Location the JVM can access a file to use for matching on the screenshot. Should be as small as possible and ideally
+  # a solid colour to match on.
+  template: "templates/example.png"
+
+  # How strict between matching, between 0 and 1. 0.9 or 0.8 seem to work best.
   match-threshold: 0.9
+
+  # The number of pixels around a successful match to ignore. This is useful if you find the entire healthbar is
+  # being matched multiple times as each segment matches the template.
   duplicate-threshold: 30
+
+  # On a Mac, the filename represents the screen you want to capture. In this case 2:0 is my second screen
+  # with no audio input, and 1:0 would be your primary screen with no audio input. There is an FFMPEG command
+  # you can execute to identify what screen is which.
+  primary-screen: "2:0"

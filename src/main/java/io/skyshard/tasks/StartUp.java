@@ -1,6 +1,6 @@
 package io.skyshard.tasks;
 
-import io.skyshard.properties.AppProperties;
+import io.skyshard.properties.SkyshardProperties;
 import io.skyshard.services.AttackService;
 import io.skyshard.services.FindTargetService;
 import io.skyshard.services.ScreenshotService;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StartUp {
 
-    private final AppProperties appProperties;
+    private final SkyshardProperties skyshardProperties;
 
     private final ScreenshotService screenshotService;
 
@@ -25,7 +25,7 @@ public class StartUp {
 
         final var screenshot = screenshotService.take();
 
-        if (appProperties.isSingleTargetMode()) {
+        if (skyshardProperties.isSingleTargetMode()) {
             findTargetService.findSingleTarget(screenshot).ifPresent((attackService::attack));
         } else {
             findTargetService.findMultipleTarget(screenshot).forEach(attackService::attack);

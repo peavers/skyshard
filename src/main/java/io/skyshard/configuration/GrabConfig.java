@@ -1,6 +1,8 @@
 package io.skyshard.configuration;
 
 import io.skyshard.exceptions.UnsupportedSystemException;
+import io.skyshard.properties.SkyshardProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -11,7 +13,10 @@ import java.awt.*;
 
 @Slf4j
 @Configuration
+@RequiredArgsConstructor
 public class GrabConfig {
+
+    private final SkyshardProperties skyshardProperties;
 
     /**
      * Create a FFmpegFrameGrabber to capture that screen region. We use this instead of a more
@@ -39,13 +44,8 @@ public class GrabConfig {
 
         if (SystemUtils.IS_OS_WINDOWS) {
             return buildGrabber("desktop", "gdigrab");
-        }
-
-        if (SystemUtils.IS_OS_MAC) {
-            // On a Mac, the filename represents the screen you want to capture. In this case 2:0 is my second screen
-            // with no audio input, and 1:0 would be your primary screen with no audio input. There is an FFMPEG command
-            // you can execute to identify what screen is which (google it).
-            return buildGrabber("2:0", "avfoundation");
+        } else if (SystemUtils.IS_OS_MAC) {
+            return buildGrabber(skyshardProperties.getPrimaryScreen(), "avfoundation");
         }
 
         throw new UnsupportedSystemException();

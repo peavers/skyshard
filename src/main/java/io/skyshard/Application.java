@@ -1,6 +1,6 @@
 package io.skyshard;
 
-import io.skyshard.properties.AppProperties;
+import io.skyshard.properties.SkyshardProperties;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.opencv.opencv_java;
@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
 @SpringBootApplication
-@EnableConfigurationProperties(AppProperties.class)
+@EnableConfigurationProperties(SkyshardProperties.class)
 public class Application {
 
     public static void main(final String[] args) {
