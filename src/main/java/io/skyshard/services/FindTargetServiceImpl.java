@@ -22,131 +22,119 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FindTargetServiceImpl implements FindTargetService {
 
-  private final AppProperties appProperties;
+    private final AppProperties appProperties;
 
-  private final Mat template;
+    private final Mat template;
 
-  @Override
-  public List<Target> findMultipleTarget(final Mat source) {
+    @Override
+    public List<Target> findMultipleTarget(final Mat source) {
 
-    return processMultipleTargets(source);
-  }
+        return processMultipleTargets(source);
+    }
 
-  @Override
-  public Optional<Target> findSingleTarget(final Mat source) {
+    @Override
+    public Optional<Target> findSingleTarget(final Mat source) {
 
-    return processSingleTarget(source);
-  }
+        return processSingleTarget(source);
+    }
 
-  /**
-   * Find the first target on the screen. This works better with fast moving targets since you're
-   * just hitting one before looking again to see if anything has moved.
-   */
-  private Optional<Target> processSingleTarget(final Mat source) {
+    /**
+     * Find the first target on the screen. This works better with fast moving targets since you're
+     * just hitting one before looking again to see if anything has moved.
+     */
+    private Optional<Target> processSingleTarget(final Mat source) {
 
-    final var result = matchTemplate(source);
-    final var minMaxLocResult = Core.minMaxLoc(result);
-    final var maxLoc = minMaxLocResult.maxLoc;
-    final var point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
+        final var result = matchTemplate(source);
+        final var minMaxLocResult = Core.minMaxLoc(result);
+        final var maxLoc = minMaxLocResult.maxLoc;
+        final var point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
 
-    return minMaxLocResult.maxVal >= appProperties.getMatchThreshold()
-        ? Optional.of(Target.builder().point(point).build())
-        : Optional.empty();
-  }
+        return minMaxLocResult.maxVal >= appProperties.getMatchThreshold()
+                ? Optional.of(Target.builder().point(point).build())
+                : Optional.empty();
+    }
 
-  /**
-   * Find all the targets on the screen. This is probably faster if you've got a lot of targets on
-   * the screen which don't move. You can attack each one before taking a new screenshot.
-   *
-   * <p>If you want to debug the screenshot and matching, you'll need to use this method for
-   * outputs.
-   */
-  private List<Target> processMultipleTargets(final Mat source) {
+    /**
+     * Find all the targets on the screen. This is probably faster if you've got a lot of targets on
+     * the screen which don't move. You can attack each one before taking a new screenshot.
+     *
+     * <p>If you want to debug the screenshot and matching, you'll need to use this method for
+     * outputs.
+     */
+    private List<Target> processMultipleTargets(final Mat source) {
 
-    final var result = matchTemplate(source);
-    final List<Target> targets = new ArrayList<>();
+        final var result = matchTemplate(source);
+        final List<Target> targets = new ArrayList<>();
 
-    double maxValue;
-    Mat destination;
+        double maxValue;
+        Mat destination;
 
-    while (true) {
-      final var minMaxLocResult = Core.minMaxLoc(result);
-      final var maxLoc = minMaxLocResult.maxLoc;
+        while (true) {
+            final var minMaxLocResult = Core.minMaxLoc(result);
+            final var maxLoc = minMaxLocResult.maxLoc;
 
-      maxValue = minMaxLocResult.maxVal;
-      destination = source.clone();
+            maxValue = minMaxLocResult.maxVal;
+            destination = source.clone();
 
-      if (maxValue >= appProperties.getMatchThreshold()) {
-        final Point point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
+            if (maxValue >= appProperties.getMatchThreshold()) {
+                final var point = new Point(maxLoc.x + template.cols(), maxLoc.y + template.rows());
 
-        // Update the pointer location to the next target
-        Imgproc.rectangle(result, maxLoc, point, new Scalar(0, 255, 0), -1);
-        drawMatch(source, maxLoc, point);
+                // Update the pointer location to the next target
+                Imgproc.rectangle(result, maxLoc, point, new Scalar(0, 255, 0), -1);
 
-        if (isDuplicate(targets, point)) {
-          continue;
+                if(appProperties.isDebug()) {
+                    MatUtils.drawRectangle(source, maxLoc, point);
+                }
+
+                if (isDuplicate(targets, point)) {
+                    continue;
+                }
+
+                targets.add(Target.builder().point(point).build());
+            } else {
+                break;
+            }
         }
 
-        targets.add(Target.builder().point(point).build());
-      } else {
-        break;
-      }
+        if (appProperties.isDebug()) {
+            MatUtils.write(destination, "match");
+        }
+
+        return targets;
     }
 
-    if (appProperties.isDebug()) {
-      MatUtils.write(destination, "match");
+    /**
+     * Preform the match between the source and the template file.
+     */
+    private Mat matchTemplate(final Mat source) {
+
+        final var result = new Mat();
+        final var normalizeSource = MatUtils.normalize(source);
+        final var normalizeSample = MatUtils.normalize(template);
+        final var normalizeResult = MatUtils.normalize(result);
+
+        Imgproc.matchTemplate(normalizeSource, normalizeSample, normalizeResult, Imgproc.TM_CCOEFF_NORMED);
+        Imgproc.threshold(normalizeResult, normalizeResult, 0.1, 1, Imgproc.THRESH_TOZERO);
+
+        return normalizeResult;
     }
 
-    return targets;
-  }
+    /**
+     * Decide if a template match is duplicate based on it being within proximity to another match.
+     * Only used for {@link FindTargetService#findMultipleTarget(Mat)}.
+     */
+    private boolean isDuplicate(final List<Target> targets, final Point point) {
 
-  /** Preform the match between the source and the template file. */
-  private Mat matchTemplate(final Mat source) {
+        final double threshold = appProperties.getDuplicateThreshold();
 
-    final Mat result = new Mat();
-
-    final Mat normalizeSource = MatUtils.normalize(source);
-    final Mat normalizeSample = MatUtils.normalize(template);
-    final Mat normalizeResult = MatUtils.normalize(result);
-
-    Imgproc.matchTemplate(
-        normalizeSource, normalizeSample, normalizeResult, Imgproc.TM_CCOEFF_NORMED);
-    Imgproc.threshold(normalizeResult, normalizeResult, 0.1, 1, Imgproc.THRESH_TOZERO);
-
-    return normalizeResult;
-  }
-
-  /** Draw on the source image the location of the match. */
-  private void drawMatch(final Mat source, final Point maxLoc, final Point point) {
-
-    if (appProperties.isDebug()) {
-      Imgproc.rectangle(source, maxLoc, point, new Scalar(0, 255, 0), 5);
-      Imgproc.putText(
-          source,
-          point.x + "," + point.y,
-          point,
-          Imgproc.FONT_HERSHEY_PLAIN,
-          2.0,
-          new Scalar(0, 255, 0),
-          1);
+        return targets.stream()
+                .anyMatch(
+                        target ->
+                                Range.between(target.getPoint().x - threshold, target.getPoint().x + threshold)
+                                        .contains(point.x)
+                                        && Range.between(
+                                        target.getPoint().y - threshold, target.getPoint().y + threshold)
+                                        .contains(point.y));
     }
-  }
 
-  /**
-   * Decide if a template match is duplicate based on it being within proximity to another match.
-   * Only used for {@link FindTargetService#findMultipleTarget(Mat)}.
-   */
-  private boolean isDuplicate(final List<Target> targets, final Point point) {
-
-    final double threshold = appProperties.getDuplicateThreshold();
-
-    return targets.stream()
-        .anyMatch(
-            target ->
-                Range.between(target.getPoint().x - threshold, target.getPoint().x + threshold)
-                        .contains(point.x)
-                    && Range.between(
-                            target.getPoint().y - threshold, target.getPoint().y + threshold)
-                        .contains(point.y));
-  }
 }

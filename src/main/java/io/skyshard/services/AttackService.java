@@ -4,5 +4,6 @@ import io.skyshard.domain.Target;
 
 public interface AttackService {
 
-  void attack(Target target);
+    void attack(Target target);
+
 }

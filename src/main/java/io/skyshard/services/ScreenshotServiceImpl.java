@@ -16,28 +16,29 @@ import static org.bytedeco.javacv.OpenCVFrameConverter.ToOrgOpenCvCoreMat;
 @RequiredArgsConstructor
 public class ScreenshotServiceImpl implements ScreenshotService {
 
-  private final FFmpegFrameGrabber grabber;
+    private final FFmpegFrameGrabber grabber;
 
-  private final AppProperties appProperties;
+    private final AppProperties appProperties;
 
-  private final ToOrgOpenCvCoreMat toCore = new ToOrgOpenCvCoreMat();
+    private final ToOrgOpenCvCoreMat toCore = new ToOrgOpenCvCoreMat();
 
-  @Override
-  @SneakyThrows
-  public Mat take() {
+    @Override
+    @SneakyThrows
+    public Mat take() {
 
-    if (!grabber.isCloseInputStream()) {
-      grabber.stop();
+        if (!grabber.isCloseInputStream()) {
+            grabber.stop();
+        }
+
+        grabber.start();
+
+        final Mat screenshot = toCore.convert(grabber.grabImage());
+
+        if (appProperties.isDebug()) {
+            MatUtils.write(screenshot, "screenshot");
+        }
+
+        return screenshot;
     }
 
-    grabber.start();
-
-    final Mat screenshot = toCore.convert(grabber.grabImage());
-
-    if (appProperties.isDebug()) {
-      MatUtils.write(screenshot, "screenshot");
-    }
-
-    return screenshot;
-  }
 }

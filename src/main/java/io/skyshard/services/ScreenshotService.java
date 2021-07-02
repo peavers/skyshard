@@ -4,5 +4,6 @@ import org.opencv.core.Mat;
 
 public interface ScreenshotService {
 
-  Mat take();
+    Mat take();
+
 }

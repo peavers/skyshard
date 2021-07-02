@@ -1,5 +1,6 @@
 package io.skyshard.configuration;
 
+import io.skyshard.exceptions.UnsupportedSystemException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -19,9 +20,8 @@ public class GrabConfig {
     @Bean
     public FFmpegFrameGrabber grabber() {
 
-        final Dimension dimension = getDimension();
-
-        final FFmpegFrameGrabber grabber = getSystemSpecificGrabber();
+        final var dimension = getDimension();
+        final var grabber = getSystemSpecificGrabber();
 
         grabber.setFrameRate(30);
         grabber.setImageWidth(dimension.width);
@@ -42,12 +42,13 @@ public class GrabConfig {
         }
 
         if (SystemUtils.IS_OS_MAC) {
-
-            // 2:0 represents the screen you want to grab, if primary display set as 1:0, if external monitor 2:0.
+            // On a Mac, the filename represents the screen you want to capture. In this case 2:0 is my second screen
+            // with no audio input, and 1:0 would be your primary screen with no audio input. There is an FFMPEG command
+            // you can execute to identify what screen is which (google it).
             return buildGrabber("2:0", "avfoundation");
         }
 
-        throw new RuntimeException("Unsupported System. Exiting...");
+        throw new UnsupportedSystemException();
     }
 
     /**
@@ -55,7 +56,7 @@ public class GrabConfig {
      */
     private FFmpegFrameGrabber buildGrabber(final String filename, final String format) {
 
-        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(filename);
+        final var grabber = new FFmpegFrameGrabber(filename);
         grabber.setFormat(format);
 
         return grabber;
@@ -68,8 +69,7 @@ public class GrabConfig {
 
         final var dimension = Toolkit.getDefaultToolkit().getScreenSize();
 
-        log.info(
-                "Using screen dimensions {}x{} as reference points", dimension.width, dimension.height);
+        log.info("Screen dimensions {}x{}", dimension.width, dimension.height);
 
         return dimension;
     }

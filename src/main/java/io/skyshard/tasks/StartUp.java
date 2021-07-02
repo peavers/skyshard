@@ -12,23 +12,24 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StartUp {
 
-  private final AppProperties appProperties;
+    private final AppProperties appProperties;
 
-  private final ScreenshotService screenshotService;
+    private final ScreenshotService screenshotService;
 
-  private final FindTargetService findTargetService;
+    private final FindTargetService findTargetService;
 
-  private final AttackService attackService;
+    private final AttackService attackService;
 
-  @Scheduled(fixedDelay = 250, initialDelay = 0)
-  public void process() {
+    @Scheduled(fixedDelay = 250, initialDelay = 0)
+    public void process() {
 
-    final var screenshot = screenshotService.take();
+        final var screenshot = screenshotService.take();
 
-    if (appProperties.isSingleTargetMode()) {
-      findTargetService.findSingleTarget(screenshot).ifPresent((attackService::attack));
-    } else {
-      findTargetService.findMultipleTarget(screenshot).forEach(attackService::attack);
+        if (appProperties.isSingleTargetMode()) {
+            findTargetService.findSingleTarget(screenshot).ifPresent((attackService::attack));
+        } else {
+            findTargetService.findMultipleTarget(screenshot).forEach(attackService::attack);
+        }
     }
-  }
+
 }
