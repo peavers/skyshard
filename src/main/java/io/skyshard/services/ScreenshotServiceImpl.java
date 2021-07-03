@@ -38,7 +38,7 @@ public class ScreenshotServiceImpl implements ScreenshotService {
             MatUtils.write(screenshot, "screenshot");
         }
 
-        return screenshot;
+        return MatUtils.normalize(screenshot);
     }
 
 }

@@ -82,7 +82,7 @@ public class FindTargetServiceImpl implements FindTargetService {
                 // Update the pointer location to the next target
                 Imgproc.rectangle(result, maxLoc, point, new Scalar(0, 255, 0), -1);
 
-                if(skyshardProperties.isDebug()) {
+                if (skyshardProperties.isDebug()) {
                     MatUtils.drawRectangle(source, maxLoc, point);
                 }
 
@@ -109,14 +109,11 @@ public class FindTargetServiceImpl implements FindTargetService {
     private Mat matchTemplate(final Mat source) {
 
         final var result = new Mat();
-        final var normalizeSource = MatUtils.normalize(source);
-        final var normalizeSample = MatUtils.normalize(template);
-        final var normalizeResult = MatUtils.normalize(result);
 
-        Imgproc.matchTemplate(normalizeSource, normalizeSample, normalizeResult, Imgproc.TM_CCOEFF_NORMED);
-        Imgproc.threshold(normalizeResult, normalizeResult, 0.1, 1, Imgproc.THRESH_TOZERO);
+        Imgproc.matchTemplate(source, template, result, Imgproc.TM_CCOEFF_NORMED);
+        Imgproc.threshold(result, result, 0.1, 1, Imgproc.THRESH_TOZERO);
 
-        return normalizeResult;
+        return result;
     }
 
     /**

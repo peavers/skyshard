@@ -2,6 +2,7 @@ package io.skyshard.configuration;
 
 import io.skyshard.exceptions.MissingTemplateException;
 import io.skyshard.properties.SkyshardProperties;
+import io.skyshard.utils.MatUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opencv.core.Mat;
@@ -32,7 +33,9 @@ public class TemplateConfig {
 
             log.info("Using template file {}", templateSource.getAbsolutePath());
 
-            return Imgcodecs.imread(templateSource.getAbsolutePath());
+            final var template = Imgcodecs.imread(templateSource.getAbsolutePath());
+
+            return MatUtils.normalize(template);
 
         } catch (final FileNotFoundException fileNotFoundException) {
             log.error("Cannot find template file {}, exiting...", skyshardProperties.getTemplate());
